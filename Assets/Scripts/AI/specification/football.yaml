@@ -1,0 +1,56 @@
+include:
+  - util.yaml
+
+expressions:  
+  other_player_area_max_x: -6
+  self_goal_line_x: 6.7
+  ball_grounded_max_y_vel: 4 # y vel to be considered grounded
+  defend_ball_jump_min_y: 1 # min height to push the ball when defending (so it goes over owns goal)
+  defend_ball_jump_max_y: 1.5 # max height to push the ball when defending
+  ball_range_to_jump_max_x: 1
+  ball_range_to_jump_max_y: 1
+  ball_range_to_jump_min_y: 0.5
+  min_distance_from_ball_x: 0.25 # so it shoots the ball left/right instead of up
+  horizontal_speed: 1
+
+nodes:
+
+  ROOT:
+    info: Ball is in the other player's area?
+    decision: state["ballPosX"] < other_player_area_max_x
+    yes: CAUTIOUS
+    no: REACT; SPRINT
+
+  CAUTIOUS:
+    info: Move to self area
+    action: data["_x"] = self_goal_line_x
+    yes: MOVE_TO_CUSTOM_POS
+  
+  REACT:
+    info: Ball going to self area and player behind the ball?
+    decision: state["ballVelX"] > 0 && state["selfPosX"] < state["ballPosX"] + 0.2 # ball going to self area and player behind ball
+    yes: GET_OVER_BALL
+    no: ATTACK
+
+  GET_OVER_BALL:
+    info: Ball on the ground/high up and player behind it?
+    action: >-
+      data["_x"] = self_goal_line_x; 
+      data["y_between_ball"] = abs(state["ballPosY"] - state["selfPosY"]);
+    decision: >-
+      abs(state["ballPosX"] - state["selfPosX"]) < ball_range_to_jump_max_x &&
+      ( abs(state["ballVelY"]) < ball_grounded_max_y_vel || 
+      (  data["y_between_ball"] >= defend_ball_jump_min_y &&
+      data["y_between_ball"] <= defend_ball_jump_max_y ) )
+    yes: JUMP; MOVE_TO_CUSTOM_POS
+    no: MOVE_TO_CUSTOM_POS
+
+  ATTACK:
+    info: Move to ball. Ball in range to push it?
+    action: data["_x"] = state["ballPosX"] + min_distance_from_ball_x
+    decision: >-
+      abs(state["selfPosX"] - state["ballPosX"]) < ball_range_to_jump_max_x &&
+      abs(state["selfPosY"] - state["ballPosY"]) < ball_range_to_jump_max_y &&
+      abs(state["selfPosY"] - state["ballPosY"]) > ball_range_to_jump_min_y
+    yes: MOVE_TO_CUSTOM_POS; JUMP
+    no: MOVE_TO_CUSTOM_POS
