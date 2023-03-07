@@ -1,6 +1,6 @@
 ![logo](ReadmeResources/logo.png)
 
-An arcade 1v1 football(soccer)/volley/basket game (single or local multiplayer). It can be played online [here](https://nuno-faria.itch.io/headtohead). It was made using the Unity game engine.
+An arcade 1v1 football(soccer)/volley/basket game (single or local multiplayer).
 
 
 
